@@ -52,6 +52,13 @@ export const createBooking = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
+    // Check if user still exists (handles cases where DB was re-seeded and old token is used)
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(401).json({ error: 'Session expired or invalid user. Please log out and log in again.' });
+      return;
+    }
+
     const resource = await prisma.resource.findUnique({ where: { id: resourceId } });
     if (!resource) {
       res.status(404).json({ error: 'Resource not found' });
