@@ -565,15 +565,14 @@ export async function seedDatabase() {
   console.log('✨ CampusPulse AI database seeding completed successfully!');
 }
 
-// Allow running directly via: npx tsx src/prisma/seed.ts
-if (process.argv[1] && process.argv[1].includes('seed')) {
+// Run directly
+if (require.main === module || import.meta.url === `file://${process.argv[1]}`) {
   seedDatabase()
     .catch((e) => {
       console.error('❌ Seeding error:', e);
       process.exit(1);
     })
     .finally(async () => {
-      const { prisma: p } = await import('../utils/prisma');
-      await p.$disconnect();
+      await prisma.$disconnect();
     });
 }
