@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-async function main() {
+export async function seedDatabase() {
   console.log('🌱 Starting CampusPulse AI database seeding...');
 
   // 1. Clean existing records
@@ -565,11 +565,14 @@ async function main() {
   console.log('✨ CampusPulse AI database seeding completed successfully!');
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seeding error:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+// Run directly
+if (require.main === module || import.meta.url === `file://${process.argv[1]}`) {
+  seedDatabase()
+    .catch((e) => {
+      console.error('❌ Seeding error:', e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}
