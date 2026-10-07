@@ -1,5 +1,8 @@
 // Central API base configuration
-const BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const envUrl = import.meta.env.VITE_API_URL;
+const BASE_URL = envUrl 
+  ? (envUrl.replace(/\/$/, '').endsWith('/api') ? envUrl.replace(/\/$/, '') : envUrl.replace(/\/$/, '') + '/api')
+  : '/api';
 
 const getHeaders = () => {
   const token = localStorage.getItem('campuspulse_token');
