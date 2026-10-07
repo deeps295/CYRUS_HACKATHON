@@ -15,6 +15,15 @@ interface LiveDataContextType {
 
 const LiveDataContext = createContext<LiveDataContextType | undefined>(undefined);
 
+// Resolve the base API URL from env or fallback to /api
+const envUrl = import.meta.env.VITE_API_URL;
+const API_BASE = envUrl
+  ? (envUrl.replace(/\/$/, '').endsWith('/api') ? envUrl.replace(/\/$/, '') : envUrl.replace(/\/$/, '') + '/api')
+  : '/api';
+
+// SSE stream URL — same host as API
+const STREAM_URL = API_BASE.replace(/\/api$/, '') + '/api/stream';
+
 export const LiveDataProvider = ({ children }: { children: ReactNode }) => {
   const [resources, setResources] = useState<Resource[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -26,7 +35,9 @@ export const LiveDataProvider = ({ children }: { children: ReactNode }) => {
 
   const loadInitialNotifications = async () => {
     try {
-      const data = await fetch('/api/notifications').then(r => r.json());
+      const token = localStorage.getItem('campuspulse_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const data = await fetch(`${API_BASE}/notifications`, { headers }).then(r => r.json());
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
     } catch (_) {}
@@ -43,18 +54,19 @@ export const LiveDataProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshResources = useCallback(async () => {
     try {
-      const data = await fetch('/api/occupancy').then(r => r.json());
+      const token = localStorage.getItem('campuspulse_token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+      const data = await fetch(`${API_BASE}/occupancy`, { headers }).then(r => r.json());
       if (data.resources) setResources(data.resources);
     } catch (_) {}
   }, []);
 
   useEffect(() => {
-    // Load initial state
     refreshResources();
     loadInitialNotifications();
 
-    // Connect to SSE stream
-    const es = new EventSource('/api/stream');
+    // Connect SSE to the correct backend URL
+    const es = new EventSource(STREAM_URL);
     eventSourceRef.current = es;
 
     es.onopen = () => setIsConnected(true);
@@ -72,7 +84,6 @@ export const LiveDataProvider = ({ children }: { children: ReactNode }) => {
           setResources(updatedResources);
           setIsSurgeActive(surgeScenarioActive);
         } else if (payload.type === 'RESOURCE_UPDATE') {
-          // Partial update
           setResources(prev =>
             prev.map(r =>
               r.id === payload.data.resourceId
@@ -85,7 +96,7 @@ export const LiveDataProvider = ({ children }: { children: ReactNode }) => {
           setUnreadCount(prev => prev + 1);
         } else if (payload.type === 'SURGE_TRIGGERED') {
           setIsSurgeActive(true);
-          loadInitialNotifications(); // reload notifications
+          loadInitialNotifications();
         } else if (payload.type === 'RESET') {
           setIsSurgeActive(false);
           refreshResources();
