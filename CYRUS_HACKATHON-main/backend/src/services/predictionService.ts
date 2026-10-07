@@ -45,58 +45,9 @@ export class PredictionService {
     };
 
     try {
-      const pythonScriptPath = path.resolve(__dirname, '../../../ml/prediction/predict.py');
-      const mlResults = await new Promise<any>((resolve, reject) => {
-        execFile('python', [pythonScriptPath, JSON.stringify(data)], (error, stdout, stderr) => {
-          if (error) {
-             console.warn("Python execution failed, falling back to analytical prediction", error.message);
-             return reject(error);
-          }
-          try {
-             resolve(JSON.parse(stdout));
-          } catch(e) {
-             reject(e);
-          }
-        });
-      });
-
-      const horizons = [
-        { name: '30m' as const, mins: 30 },
-        { name: '1h' as const, mins: 60 },
-        { name: '2h' as const, mins: 120 },
-        { name: '4h' as const, mins: 240 },
-      ];
-
-      return horizons.map(({ name, mins }) => {
-        let predicted = mlResults[name];
-        if (predicted === undefined || predicted === null) {
-            throw new Error("Missing ML result");
-        }
-        
-        predicted = Math.round(Math.max(5.0, Math.min(98.0, predicted)) * 10) / 10;
-        const diff = predicted - currentOccupancyPercent;
-        let trend: 'INCREASING' | 'DECREASING' | 'STABLE' = 'STABLE';
-        if (diff >= 3.5) trend = 'INCREASING';
-        else if (diff <= -3.5) trend = 'DECREASING';
-
-        let summary = 'Occupancy projected to stay steady';
-        if (trend === 'INCREASING') {
-          summary = `Expected to rise by ${Math.round(diff)}% to ${predicted}%`;
-        } else if (trend === 'DECREASING') {
-          summary = `Expected to subside by ${Math.abs(Math.round(diff))}% to ${predicted}%`;
-        }
-
-        const confidence = Math.round((0.94 - (mins / 240) * 0.16) * 100) / 100;
-
-        return {
-          horizon: name,
-          timeOffsetMinutes: mins,
-          predictedPercent: predicted,
-          confidence,
-          trend,
-          summary,
-        };
-      });
+      // Bypass Python ML script completely for demo to avoid hangs on Windows (Microsoft Store popup)
+      // and directly use the reliable analytical engine
+      return this.calculateAnalyticalPredictions(currentOccupancyPercent, capacity, entryRate, exitRate, resourceType, currentHour);
 
     } catch (err) {
       console.warn("Using analytical prediction fallback.");

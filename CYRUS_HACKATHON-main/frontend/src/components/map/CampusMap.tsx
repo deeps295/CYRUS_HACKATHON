@@ -16,7 +16,7 @@ interface CampusMapProps {
   zoom?: number;
 }
 
-const CAMPUS_CENTER: LatLngExpression = [12.9716, 77.5946];
+const CAMPUS_CENTER: LatLngExpression = [10.8290, 77.0592];
 
 const getMarkerRadius = (pct: number) => {
   if (pct > 80) return 18;
@@ -29,7 +29,7 @@ export const CampusMap: React.FC<CampusMapProps> = ({
   onResourceSelect,
   height = '500px',
   className,
-  center = [12.9716, 77.5946],
+  center = [10.8290, 77.0592],
   zoom = 17,
 }) => {
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);

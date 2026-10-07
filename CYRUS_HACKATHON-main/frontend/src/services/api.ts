@@ -26,7 +26,7 @@ export const authAPI = {
       body: JSON.stringify({ email, password }),
     }).then(handleResponse),
 
-  register: (data: { email: string; password: string; name: string; department?: string }) =>
+  register: (data: { email: string; password: string; name: string; department?: string; phoneNo?: string; rollNo?: string; role?: string }) =>
     fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

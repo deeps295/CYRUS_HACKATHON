@@ -9,6 +9,8 @@ interface LiveDataContextType {
   isSurgeActive: boolean;
   lastUpdate: Date | null;
   refreshResources: () => void;
+  markAllReadLocally: () => void;
+  refreshNotifications: () => void;
 }
 
 const LiveDataContext = createContext<LiveDataContextType | undefined>(undefined);
@@ -29,6 +31,15 @@ export const LiveDataProvider = ({ children }: { children: ReactNode }) => {
       setUnreadCount(data.unreadCount || 0);
     } catch (_) {}
   };
+
+  const markAllReadLocally = useCallback(() => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+  }, []);
+
+  const refreshNotifications = useCallback(async () => {
+    await loadInitialNotifications();
+  }, []);
 
   const refreshResources = useCallback(async () => {
     try {
@@ -88,7 +99,7 @@ export const LiveDataProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   return (
-    <LiveDataContext.Provider value={{ resources, notifications, unreadCount, isConnected, isSurgeActive, lastUpdate, refreshResources }}>
+    <LiveDataContext.Provider value={{ resources, notifications, unreadCount, isConnected, isSurgeActive, lastUpdate, refreshResources, markAllReadLocally, refreshNotifications }}>
       {children}
     </LiveDataContext.Provider>
   );
